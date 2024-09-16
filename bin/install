@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-DOWNLOAD_URL="https://github.com/realm/SwiftLint/releases/download/$ASDF_INSTALL_VERSION/portable_swiftlint.zip"
+DOWNLOAD_URL="https://repo.artifactory-dogen.group.echonet/artifactory/Swiftlint/releases/download/$ASDF_INSTALL_VERSION/portable_swiftlint.zip"
 
 # make a temporary download directory with a cleanup hook
 readonly TMP_DOWNLOAD_DIR="$(mktemp -d -t "asdf_swiftlint_XXXXXX")"
@@ -10,9 +10,18 @@ trap 'rm -rf "${TMP_DOWNLOAD_DIR?}"' EXIT
 
 SWIFTLINT_DOWNLOAD_PATH="$TMP_DOWNLOAD_DIR/swiftlint.zip"
 
+if [ -n "${HOMEBREW_DOCKER_REGISTRY_BASIC_AUTH_TOKEN:-}" ]; then
+	curl_opts=("${curl_opts[@]}" -H "Authorization: Basic $HOMEBREW_DOCKER_REGISTRY_BASIC_AUTH_TOKEN")
+else
+	echo "Please make sure that your mac is properly configured to access Artifactory:"
+	echo "- https://bnpp-lbc.atlassian.net/wiki/spaces/RH/pages/4263739396"
+	echo "- https://github.com/TMD-DX-Mobile/workstation-toolbox"
+	exit 1
+fi
+
 # Download the zipped swiftlint file
 mkdir -p "$ASDF_INSTALL_PATH/bin"
-curl -s "$DOWNLOAD_URL" -L -o "$SWIFTLINT_DOWNLOAD_PATH" 2>/dev/null
+curl "${curl_opts[@]}" -s "$DOWNLOAD_URL" -L -o "$SWIFTLINT_DOWNLOAD_PATH" 2>/dev/null
 
 # unzip swiftlint from the archive into the bin folder
 unzip -o "$SWIFTLINT_DOWNLOAD_PATH" swiftlint -d "$ASDF_INSTALL_PATH/bin" >/dev/null
