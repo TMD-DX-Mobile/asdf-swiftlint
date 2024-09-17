@@ -2,16 +2,10 @@
 
 set -eo pipefail
 
-RELEASES_URL="https://api.github.com/repos/realm/swiftlint/releases"
+GH_REPO="https://github.com/realm/SwiftLint"
 
-curl_cmd="curl -s"
-if [ -n "$GITHUB_API_TOKEN" ]; then
-    curl_cmd="$curl_cmd -H \"Authorization: token $GITHUB_API_TOKEN\""
-fi
-
-# Fetch list of releases and get names of each release tag
-eval "$curl_cmd $RELEASES_URL" \
-    | grep tag_name \
-    | sed 's/"tag_name": //g;s/"//g;s/,//g' \
-    | (tac 2>/dev/null || tail -r) \
-    | xargs
+git -c 'versionsort.suffix=-beta' ls-remote --tags --refs --sort version:refname "$GH_REPO" \
+| grep -o 'refs/tags/.*' \
+| cut -d/ -f3- \
+| sed 's/^v//' \
+| grep -v "@"
